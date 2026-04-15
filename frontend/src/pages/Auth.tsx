@@ -10,13 +10,11 @@ export default function Auth() {
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) {
-      toast.error(error.message)
-    } else {
-      toast.success('Bienvenido a MeetingBoard')
-    }
-    setLoading(false)
+    // DEV: bypass — cualquier credencial ingresa
+    await new Promise(r => setTimeout(r, 600))
+    localStorage.setItem('dev_auth', '1')
+    toast.success('Bienvenido a MeetingBoard')
+    window.location.reload()
   }
 
   return (

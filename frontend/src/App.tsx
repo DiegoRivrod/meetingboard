@@ -13,17 +13,22 @@ import People     from './pages/People'
 import Settings   from './pages/Settings'
 
 function App() {
-  const [session, setSession] = useState<Session | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [session, setSession] = useState<Session | null>(
+    localStorage.getItem('dev_auth') ? ({} as Session) : null
+  )
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    // Obtiene la sesión inicial
+    // DEV: si hay bypass activo, no consultar Supabase
+    if (localStorage.getItem('dev_auth')) return
+
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session)
       setLoading(false)
+    }).catch(() => {
+      setLoading(false)
     })
 
-    // Escucha cambios de auth (login/logout)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
     })
