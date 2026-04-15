@@ -1,0 +1,105 @@
+##
+## Docker Compose para desarrollo local en Windows.
+##
+## Por qué Docker Compose y no instalar todo directo:
+## - Redis en Windows es complicado (no es nativo, requiere WSL2 o un binario especial)
+## - Con Compose, un solo comando levanta todo el stack
+## - El entorno de dev es idéntico al de producción (mismas versiones de Redis, Python)
+## - Si onboardeas a otro dev, solo necesita Docker Desktop
+##
+## Uso:
+##   docker compose up          # Levanta API + Redis + Worker en modo attached
+##   docker compose up -d       # En background
+##   docker compose logs -f api # Ver logs de un servicio
+##   docker compose down        # Apagar todo
+##
+
+version: '3.9'
+
+services:
+
+  # ─── Redis (broker de Celery) ────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── API FastAPI ──────────────────────────────────────────────────────────────
+  api:
+    build: .
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - '8000:8000'
+    volumes:
+      # Hot reload en desarrollo: monta el código local en el contenedor
+      - ./app:/app/app
+    env_file:
+      - .env
+    environment:
+      - DEBUG=true
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'python', '-c', "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ─── Celery Worker (transcripción + análisis LLM) ─────────────────────────────
+  worker:
+    build: .
+    command: >
+      celery -A app.workers.celery_app worker
+      --loglevel=info
+      --queues=transcription,llm,scheduled
+      --concurrency=1
+    volumes:
+      - ./app:/app/app
+    env_file:
+      - .env
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  # ─── Celery Beat (scheduler) ──────────────────────────────────────────────────
+  beat:
+    build: .
+    command: celery -A app.workers.celery_app beat --loglevel=info
+    volumes:
+      - ./app:/app/app
+    env_file:
+      - .env
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  # ─── Flower (UI de monitoreo de Celery) — opcional ────────────────────────────
+  flower:
+    build: .
+    command: celery -A app.workers.celery_app flower --port=5555
+    ports:
+      - '5555:5555'
+    env_file:
+      - .env
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+    profiles:
+      - monitoring  # Solo se levanta con: docker compose --profile monitoring up
+
+volumes:
+  redis_data:

@@ -1,0 +1,40 @@
+##
+## Deploy a Producción — corre solo cuando se hace merge a main.
+##
+## Por qué separar CI del deploy:
+## - CI corre en todos los PRs (feedback rápido)
+## - Deploy solo en main (cambios aprobados)
+## - Esto previene desplegar código sin revisión
+##
+## Esta configuración asume:
+## - Frontend: conectado a Vercel via GitHub integration (automático)
+## - Backend: Railway con GitHub Deploys configurado
+##
+
+name: Deploy Production
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy-frontend:
+    name: Deploy Frontend → Vercel
+    runs-on: ubuntu-latest
+    # Vercel se despliega automáticamente cuando hay push a main
+    # si la integración de GitHub está configurada en vercel.com
+    # Este job existe como registro y para posibles pasos de post-deploy
+    steps:
+      - uses: actions/checkout@v4
+      - name: Notify Vercel
+        run: echo "Vercel se despliega automáticamente via GitHub integration"
+
+  deploy-backend:
+    name: Deploy Backend → Railway
+    runs-on: ubuntu-latest
+    # Railway también se despliega automáticamente con su GitHub integration
+    # Este job puede usarse para correr migraciones post-deploy en el futuro
+    steps:
+      - uses: actions/checkout@v4
+      - name: Notify Railway
+        run: echo "Railway se despliega automáticamente via GitHub integration"

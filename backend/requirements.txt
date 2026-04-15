@@ -1,0 +1,46 @@
+# ─── Web Framework ────────────────────────────────────────────────────────────
+fastapi==0.115.12
+uvicorn[standard]==0.34.0
+python-multipart==0.0.20       # Soporte para form/file uploads
+
+# ─── Validación y configuración ───────────────────────────────────────────────
+pydantic==2.11.3
+pydantic-settings==2.9.1       # Variables de entorno tipadas
+
+# ─── Autenticación JWT ────────────────────────────────────────────────────────
+python-jose[cryptography]==3.3.0  # Verificar tokens de Supabase
+
+# ─── Base de datos ────────────────────────────────────────────────────────────
+supabase==2.15.2               # Cliente Supabase (PostgreSQL + Storage + Auth)
+asyncpg==0.30.0                # Driver PostgreSQL async para consultas directas
+
+# ─── Job Queue (procesamiento asíncrono largo) ────────────────────────────────
+celery[redis]==5.5.2           # Worker queue para transcripción + análisis LLM
+redis==5.2.1                   # Broker y backend de resultados para Celery
+flower==2.0.1                  # UI de monitoreo de Celery (opcional)
+
+# ─── Procesamiento de audio/video ─────────────────────────────────────────────
+# faster-whisper: implementación optimizada de Whisper en CTranslate2
+# 4-8x más rápido que el Whisper original, mismos modelos
+faster-whisper==1.1.1
+
+# pyannote.audio: diarización de hablantes (quién habló cuándo)
+# Requiere aceptar términos en HuggingFace y token HF_TOKEN
+pyannote.audio==3.3.2
+
+# ffmpeg-python: wrapper para extraer audio de videos
+ffmpeg-python==0.2.0
+
+# ─── LLM — Claude API ─────────────────────────────────────────────────────────
+anthropic==0.51.0
+
+# ─── HTTP async ───────────────────────────────────────────────────────────────
+httpx==0.28.1                  # Cliente HTTP async para llamadas a Zoom/Teams API
+
+# ─── Email ─────────────────────────────────────────────────────────────────────
+resend==2.10.0                 # Email transaccional (100/día gratis)
+
+# ─── Utilidades ───────────────────────────────────────────────────────────────
+python-dateutil==2.9.0.post0   # Parseo flexible de fechas en lenguaje natural
+loguru==0.7.3                  # Logging estructurado más amigable que stdlib logging
+tenacity==9.1.2                # Retries con backoff para llamadas a APIs externas

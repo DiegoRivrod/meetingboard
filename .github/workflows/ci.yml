@@ -1,0 +1,91 @@
+##
+## CI — Corre en cada Pull Request y en cada push a main.
+##
+## Por qué CI automático:
+## - Atrapa errores de TypeScript y Python antes de llegar a producción
+## - Obliga a que el código compilable sea el único que se mergea
+## - En el futuro se agregarán tests automáticos aquí
+##
+
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  # ─── Frontend ────────────────────────────────────────────────────────────────
+  frontend:
+    name: Frontend (TypeScript + Lint)
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript check
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+
+  # ─── Backend ──────────────────────────────────────────────────────────────────
+  backend:
+    name: Backend (Python + Ruff)
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: backend/requirements-dev.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: Lint with Ruff
+        run: ruff check app/
+
+      - name: Type check with mypy
+        run: mypy app/ --ignore-missing-imports
+        continue-on-error: true  # Los errores de mypy no bloquean el CI en fase inicial
+
+      - name: Run tests
+        run: pytest tests/ -v --tb=short
+        continue-on-error: true  # No hay tests aún (se añadirán en Fase 1+)
+        env:
+          SUPABASE_URL: https://example.supabase.co
+          SUPABASE_ANON_KEY: test-key
+          SUPABASE_SERVICE_ROLE_KEY: test-service-key
+          SUPABASE_JWT_SECRET: test-secret
+          ANTHROPIC_API_KEY: sk-ant-test
+          REDIS_URL: redis://localhost:6379/0

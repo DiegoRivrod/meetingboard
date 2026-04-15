@@ -1,0 +1,15 @@
+-r requirements.txt
+
+# Testing
+pytest==8.3.5
+pytest-asyncio==0.25.3
+httpx==0.28.1                  # TestClient para FastAPI
+pytest-mock==3.14.0
+
+# Calidad de código
+ruff==0.11.6                   # Linter + formatter (reemplaza flake8 + black)
+mypy==1.15.0                   # Type checking
+
+# Desarrollo
+watchfiles==1.0.5              # Hot reload para uvicorn
+ipython==8.35.0                # REPL interactivo para debugging
